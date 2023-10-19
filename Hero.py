@@ -1,7 +1,10 @@
 import random
+# from colorama import Fore, Back, Style
 
 HP_PER_STR = 22
+HP_REGEN_PER_STR = 0.1
 MANA_PER_INT = 12
+MANA_REGEN_PER_INT = 0.05
 ARMOR_PER_AGI = 1 / 6
 MAGIC_RESIST_BASE = 0.25
 PHYS_RESIST_MULTIPLIER = 0.06
@@ -9,17 +12,24 @@ MAGIC_RESIST_PER_INT = 0.001
 
 
 class Hero:
-    def __init__(self, hero_name, category, base_dmg, dmg_deviation, base_hp, base_mana, base_armor, strength, agility,
+    def __init__(self, hero_name, code_names, category, base_dmg, dmg_deviation, base_hp, base_mana, base_armor, strength, agility,
                  intelligence, str_gain, agi_gain, int_gain):
         self.hero_name = hero_name
+        self.code_names = []
+        for i in code_names:
+            self.code_names.append(i)
         self.category = category
         self.level = 1
         self.base_dmg = base_dmg
         self.dmg_deviation = dmg_deviation
         self.base_hp = base_hp
-        self.hp = strength * HP_PER_STR + base_hp
+        self.max_hp = strength * HP_PER_STR + base_hp
+        self.hp = self.max_hp
+        self.hp_regen = strength * HP_REGEN_PER_STR
         self.base_mana = base_mana
-        self.mana = intelligence * MANA_PER_INT + base_mana
+        self.max_mana = intelligence * MANA_PER_INT + base_mana
+        self.mana = self.max_mana
+        self.mana_regen = intelligence * 0.05
         self.base_armor = base_armor
         self.armor = agility * ARMOR_PER_AGI + base_armor
         self.strength = strength
@@ -29,24 +39,69 @@ class Hero:
         self.agi_gain = agi_gain
         self.int_gain = int_gain
         self.evasion = 0
+        self.crit_chance = 0
         self.physical_resist = self.calculatePhysicalResist()
         self.magical_resist = self.calculateMagicalResist()
         self.dmg = self.calculateDmg()
         self.team = 0
         self.aghanims_scepter = False
         self.aghanims_shard = False
-        self.mastery_points = 0
+        self.mastery_points = 1
         self.abilities = []
+        self.hero_modifiers = []
         self.dead = False
+
+    def __del__(self):
+        print(f"{self.getHeroName()} removed.")
 
     def getHeroName(self):
         return self.hero_name
 
+    def getCodeNames(self):
+        return self.code_names
+
+    def isDead(self):
+        return self.dead
+
     def getHeroDmg(self):
         return self.dmg + random.randint(0, self.dmg_deviation)
 
+    def getPhysicalResist(self):
+        return self.physical_resist
+
+    def getHeroHP(self):
+        return self.hp
+
+    def getHeroMaxHP(self):
+        return self.max_hp
+
+    def getHeroMana(self):
+        return self.mana
+
+    def getHeroMaxMana(self):
+        return self.max_hp
+
+    def getHeroLevel(self):
+        return self.level
+
+    def getHeroAbility(self, index):
+        return self.abilities[index]
+
     def getMasteryPoints(self):
         return self.mastery_points
+
+    def setHeroMana(self, value):
+        if (self.mana - value) < 0:
+            self.mana = 0
+        else:
+            self.mana -= value
+
+    def setTeam(self, team):
+        self.team = team
+
+    def killHero(self):
+        self.dead = True
+
     def calculateDmg(self):
         if self.category.lower() == "str" or self.category.lower() == "strength":
             self.dmg = self.base_dmg + self.strength
@@ -65,12 +120,16 @@ class Hero:
             return self.dmg
 
     def takeDmg(self, damage):
-        if (self.hp - damage) <= 0:
+        if self.isDead():
+            print(f"{self.getHeroName()} is already dead, man!")
+        elif (self.hp - damage) <= 0:
             self.hp = 0
-            self.dead = True
-            print(f"{self.getHeroName()} is dead!")
+            self.killHero()
+            print(f"Hero {self.getHeroName()} is now at {self.getHeroHP():.0f} HP!")
+            print(f"{self.getHeroName()} is slain!")
         else:
             self.hp -= damage
+            print(f"Hero {self.getHeroName()} is now at {self.getHeroHP():.0f} HP!")
 
     def calculatePhysicalResist(self):
         self.physical_resist = 1 - (
@@ -88,7 +147,7 @@ class Hero:
         return self.team == target.team
 
     def useAttack(self, target):
-        target.takeDmg(self.getHeroDmg()*target.calculatePhysicalResist())
+        target.takeDmg(self.getHeroDmg() * target.getPhysicalResist())
 
     def levelUpAbility(self, ability):
         self.mastery_points -= 1
@@ -101,9 +160,9 @@ class Hero:
         self.abilities.append(ability)
 
     def heroLevelUp(self):
+        print(f"{self.getHeroName()} levelled up!")
         if self.level >= 30:
-            print("Hero is now at max level!")
-            return
+            return 0
         self.level += 1
         self.mastery_points += 1
         self.strength += self.str_gain
@@ -125,14 +184,12 @@ class Hero:
             self.heroLevelUp()
 
     def displayHeroInfo(self):
-        print(f"{self.hero_name}")
-        print(f"Category: {self.category}")
-        print(f"Level: {self.level}")
+        print(f"{self.hero_name}\t Level {self.getHeroLevel()}")
+        print(f"Strength: {self.strength:.1f}")
+        print(f"Agility: {self.agility:.1f}")
+        print(f"Intelligence: {self.intelligence:.1f}")
         print(f"Damage: {self.dmg:.2f}")
         print(f"HP: {self.hp:.0f}")
         print(f"Mana: {self.mana:.0f}")
         print(f"Armor: {self.armor:.1f}")
-        print(f"Strength: {self.strength:.1f}")
-        print(f"Agility: {self.agility:.1f}")
-        print(f"Intelligence: {self.intelligence:.1f}")
-        print(f"Magical Resist: {1 - self.magical_resist:.2f}")
+        print(f"Magical Resist: {1 - self.magical_resist:.2f}\n")
