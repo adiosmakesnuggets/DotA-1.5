@@ -1,8 +1,9 @@
 from Ability import *
 
-Stifling_Dagger = StiflingDagger()
+StiflingDagger = StiflingDagger()
+# CoupDeGrace = CoupDeGrace()
 
 ability_data = {
-    'phantom_assassin': Stifling_Dagger
+    'Phantom Assassin': StiflingDagger,
 
 }

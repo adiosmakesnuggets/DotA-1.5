@@ -1,52 +1,65 @@
-import Hero
 import Player
 from hero_data import *
-# import Ability
+from ability_data import *
+from colorama import Fore
 radiant_unit_count = 1
 dire_unit_count = 1
 radiant_units = {}
 dire_units = {}
 
 
+def checkHero(selected_hero, ID):
+    if ID.isnumeric():
+        edited_ID = int(ID)
+        if selected_hero.getTeam() == "radiant":
+            if dire_units.get(edited_ID):
+                dire_hero = dire_units.get(edited_ID)
+                return dire_hero
+            else:
+                print(f"Couldn't find unit!")
+        elif selected_hero.getTeam() == "dire":
+            if radiant_units.get(edited_ID):
+                radiant_hero = radiant_units.get(edited_ID)
+                return radiant_hero
+            else:
+                print(f"Couldn't find unit!")
+    else:
+        print(f"Use numbers to select heroes retard!")
+        return None
+
+
 def spawnHero(hero_name, team=None):  # spawnHero creates an object of type Hero using the pre-made hero attributes for each hero found in hero_data.py
-    if not hero_name:
-        print("No unit specified!")
-
-    for hero, attributes in hero_data.items():
-        if hero_name in attributes['code_names']:
-            new_hero = Hero.Hero(**attributes)
-            ability_data_key = attributes.get('code_names')[0]
-            from ability_data import ability_data
-            new_hero.addAbility(ability_data.get(ability_data_key))  # this is a clusterfuck. I will redo this later
-            global radiant_unit_count, dire_unit_count, radiant_units, dire_units
-            new_hero.setTeam(team)
-
-            if not team:
-                radiant_units[radiant_unit_count] = new_hero
-                radiant_unit_count += 1
-            elif team:
-                dire_units[dire_unit_count] = new_hero
-                dire_unit_count += 1
-            new_hero.displayHeroInfo()
-
-            return new_hero
-
-    print(f"Couldn't find unit by that name ({hero_name})!")
+    new_hero = Hero(**hero_data.get(hero_name))
+    if new_hero:
+        global radiant_unit_count, dire_unit_count, radiant_units, dire_units
+        new_hero.setTeam(team)
+        if team:
+            dire_units[dire_unit_count] = new_hero
+            dire_unit_count += 1
+        else:
+            radiant_units[radiant_unit_count] = new_hero
+            radiant_unit_count += 1
+        ability_data_key = ability_data.get(new_hero.getHeroName())
+        new_hero.addAbility(ability_data_key)
+        new_hero.displayHeroInfo()
+    else:
+        print(f"Couldn't find unit by that name ({hero_name})!")
+    return new_hero
 
 
-def printUnits(team=None):
+def printUnits(team=None):  # prints all heroes in both radiant and dire teams, respectively
     global radiant_units, dire_units
     if not team:
-        print("Radiant team:")
-        for ID, hero in radiant_units.items():
-            print(f"{ID})\t{hero.getHeroName()}, Level {hero.getHeroLevel()}")
+        print(f"{Fore.GREEN}Radiant Team:{Fore.RESET}")
+        for ID, radiant_hero in radiant_units.items():
+            print(f"{ID})\t{radiant_hero.getHeroName()}, Level {radiant_hero.getHeroLevel()}")
     else:
-        print("Dire team:")
-        for ID, hero in dire_units.items():
-            print(f"{ID})\t{hero.getHeroName()}, Level {hero.getHeroLevel()}")
+        print(f"{Fore.RED}Dire Team:{Fore.RESET}")
+        for ID, dire_hero in dire_units.items():
+            print(f"{ID})\t{dire_hero.getHeroName()}, Level {dire_hero.getHeroLevel()}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # the main game location
 
     player1 = Player.Player()
     print(f"Welcome, {player1.getPlayerName()}!\nPlease choose a hero by typing the hero name. (No spaces allowed)")
@@ -57,33 +70,27 @@ if __name__ == "__main__":
             continue
         else:
             player1.assignHero(hero)
-            player1_hero = player1.getAssignedHero()
             break
-    print(f"{hero.getHeroAbility(0)}")
+    #   test = player1.getAssignedHero()
+    #   print(test.getHeroName())
+    #   dire_units[1] = test
+    #   some_hero = checkHero(test, 1)
+    #   print(some_hero)
+    #   test.useAttack(some_hero)
     while True:
         action = input()
         command = action.split()
-        hero = player1.getAssignedHero()
+        player1_hero = player1.getAssignedHero()
         try:
             if command[0] == "hit" and command[1]:
-                flag = 0
-                for hero_name, hero_object in dire_units.items():
-                    if command[1].lower() in hero_object.getCodeNames():
-                        hero.useAttack(hero_object)
-                        flag = 1
-                        break
-                if not flag:
-                    print(f"Couldn't find unit by that name ({command[1]})!")
+                target_hero = checkHero(player1_hero, command[1])
+                if target_hero:
+                    player1_hero.useAttack(target_hero)
 
             elif command[0] == "cast" and command[1]:
-                flag = 0
-                for hero_name, hero_object in dire_units.items():
-                    if command[2].lower() in hero_object.getCodeNames():
-                        hero.useAbility(hero.getHeroAbility(int(command[1])), hero_object)
-                        flag = 1
-                        break
-                if not flag:
-                    print(f"Couldn't find unit by that name ({command[1]})!")
+                target_hero = checkHero(player1_hero, command[1])
+                if target_hero:
+                    hero.useAbility(hero.getHeroAbility(int(command[1])), target_hero)
 
             elif command[0] == "-createhero":
                 if command[1]:
@@ -102,13 +109,18 @@ if __name__ == "__main__":
                 if int(command[1]) >= 0:
                     for i in range(0, int(command[1])):
                         hero.heroLevelUp()
+                    print(f"{hero.getHeroName()} levelled up! Now level {hero.getHeroLevel()}")
                 else:
                     print("Can't take away levels!")
 
-            elif command[0] == ""
+            elif command[0] == "-lvlmax":
+                hero.maxLevel()
+
+            elif command[0] == "exit":
+                exit()
 
             else:
                 print("Unknown command")
 
         except IndexError:
-            print("No unit specified!")
+            print("No input specified!")

@@ -46,7 +46,6 @@ class Ability:
     def getAbilityName(self):
         return self.ability_name
 
-
     def isAvailable(self):
         if self.getAbilityLevel() == -1:
             print("Ability not learned.")
@@ -83,6 +82,7 @@ class StiflingDagger(Ability):
         else:
             pass
 
+
 # class CoupdeGrace(Ability):
-    # def __init__(self):
-        # super().__init__("Coup de Grâce", 3, [0], [2, 3.25, 4.5], "Physical", 0, 0, True, "No")
+#    def __init__(self):
+#        super().__init__("Coup de Grâce", 3, [0], [2, 3.25, 4.5], "Physical", 0, 0, True, "No")
